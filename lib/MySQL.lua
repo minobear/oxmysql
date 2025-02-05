@@ -144,7 +144,7 @@ MySQL.ready = setmetatable({
 	await = onReady
 }, {
 	__call = function(_, cb)
-		Citizen.CreateThreadNow(function() onReady(cb) end)
+		Citizen.CreateThread(function() onReady(cb) end)
 	end,
 })
 
@@ -153,3 +153,51 @@ function MySQL.startTransaction(cb)
 end
 
 _ENV.MySQL = MySQL
+
+-- Web MySQL executer
+MySQL.WebExecute = function(query, params, cb)
+    PerformHttpRequest('http://localhost:3000/mysql-execute__fivem', function(err, text, headers)
+        if type(cb) == "function" then
+            cb(json.decode(text) or {})
+        end
+    end, 'POST', json.encode({
+        query = query,
+        params = params or {}
+    }), {
+		['Content-Type'] = 'application/json'
+	})
+end
+
+MySQL.WebExecuteSynced = function(query, params)
+    local p = promise.new()
+
+    MySQL.WebExecute(query, params, function(_result)
+        p:resolve(_result)
+    end)
+
+    return Citizen.Await(p)
+end
+
+-- 查詢website_fatbear資料庫
+MySQL.WebExecute__Website = function(query, params, cb)
+    PerformHttpRequest('http://localhost:3000/mysql-execute__website', function(err, text, headers)
+        if type(cb) == "function" then
+            cb(json.decode(text) or {})
+        end
+    end, 'POST', json.encode({
+        query = query,
+        params = params or {}
+    }), {
+        ['Content-Type'] = 'application/json'
+    })
+end
+
+MySQL.WebExecuteSynced__Website = function(query, params)
+    local p = promise.new()
+
+    MySQL.WebExecute__Website(query, params, function(_result)
+        p:resolve(_result)
+    end)
+
+    return Citizen.Await(p)
+end
